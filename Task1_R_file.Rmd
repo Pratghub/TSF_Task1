@@ -1,0 +1,115 @@
+---
+title: "Task#1 TSF"
+author: "Pratyusha Mukhopadhyay"
+date: "2022-10-12"
+output: html_document
+---
+
+<style type="text/css">
+
+body, td {
+   font-size: 14px;
+}
+code.r{
+  font-size: 20px;
+}
+pre {
+  font-size: 24px
+}
+</style>
+
+## Attaching required libraries
+
+```{r}
+library(dplyr)
+library(ggplot2) # for graphs
+library(caTools) # for train test split
+```
+
+## Reading the dataset
+```{r}
+rm(list = ls())
+df = read.csv('D:/Internship and Projects/The Sparks Foundation/student_scores.csv') ; df
+```
+
+## Presenting the data through a scatterplot
+
+```{r}
+theme(plot.title=element_text(size=16,hjust=0.5,face='bold'),
+                  plot.subtitle=element_text(size=13,hjust=0.9),
+                  legend.title=element_text(size=14,face='bold.italic'),
+                  axis.title=element_text(face='bold'),
+                  axis.text=element_text(face='bold',size=12)) %>% 
+  theme_set()
+
+
+df %>% 
+  ggplot(aes(Hours , Scores))+
+  geom_point(col = 'blue', size = 2)+
+  labs(title = 'Scatterplot of Percentage of Scores Vs Hours of Study',
+       x = 'Hours of Study\n' , y = '\nPercentage Scores of Students')
+```
+
+### **Observation : From the above graph we see there exists a highly positive linear association between the number of hours studied and percentage of scores.**
+
+### Here, the independent variable is Hours and dependent variable is Scores. To make predictions about the percentage scores based on the number of hours studied, we will run train test split method where we are going to divide the dataset in the ratio 8:2. The 80% is the training dataset through which we are going to fit a linear regression and we are going to make predictions on the test set, i.e. the rest 20% of the dataset.
+
+## Splitting the data into training and test sets
+
+```{r}
+set.seed(seed = 1)
+sample = sample.split(df$Hours, SplitRatio = 0.8) ; sample
+train  = subset(df, sample == TRUE) ; train
+test = subset(df, sample == FALSE) ; test
+```
+
+## Fitting Linear Regression through training dataset
+
+```{r}
+s = (model = lm(Scores ~ Hours , train)) %>% summary() ; s
+intercept = s$coefficients[1,1] ; intercept
+coefficient = s$coefficients[2,1] ; coefficient
+```
+
+## Presenting the Linear Fit graphically
+
+```{r}
+train %>% 
+  ggplot(aes(Hours , Scores))+
+  geom_point(col = 'blue', size = 2)+
+  stat_smooth(method = lm , formula = y ~ x , lwd = 1.2 , 
+            aes(col = 'Fitted Line') , geom = 'smooth')+
+  labs(title = 'Linear Regression Fitting',
+       x = 'Hours of Study\n' , y = '\nPercentage Scores of Students' , 
+       col = 'Index')
+```
+
+## Evaluating the model
+
+### For checking if the model gives a good fit to the data or not, we usually check the MSE or Mean Square Error of the model. We also check the value of R^2. 
+
+```{r}
+MSE = (resid(model)^2 %>% sum()) / (nrow(train) - 2) ; MSE
+```
+
+### **Observation : The value of R^2 is almost 95%, hence we can conclude the fit is good.**
+
+### Now, we have to make predictions on the test dataset.
+
+## Comparing actual values and predicted values of the test set
+
+```{r}
+test_pred = test %>% mutate(Predicted_Scores = intercept + coefficient*Hours) ; test_pred
+```
+
+## Predicting percentage score for given hours of study
+
+```{r}
+Score_Pred = function(hrs)
+{
+  paste('The Percentage Scores for', hrs , 'hours of study will be',
+        intercept + coefficient*hrs)
+}
+
+Score_Pred(9.25) # percentage score for 9.25 hours of study.
+```
